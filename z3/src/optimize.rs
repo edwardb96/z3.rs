@@ -1,4 +1,4 @@
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::fmt;
 use z3_sys::*;
 use Ast;
@@ -30,6 +30,23 @@ impl<'ctx> Optimize<'ctx> {
     pub fn assert(&self, ast: &Ast<'ctx>) {
         let guard = Z3_MUTEX.lock().unwrap();
         unsafe { Z3_optimize_assert(self.ctx.z3_ctx, self.z3_opt, ast.z3_ast) };
+    }
+
+    /// Assert soft constraint to the optimization context.
+    ///
+    /// # See also:
+    ///
+    /// - [`Optimize::maximize()`](#method.maximize)
+    /// - [`Optimize::minimize()`](#method.minimize)
+    pub fn add_soft(&self, ast: &Ast<'ctx>, weight: i64) {
+        let guard = Z3_MUTEX.lock().unwrap();
+        let cstr_weight = CString::new(weight.to_string()).unwrap();
+        let symbol_ptr = std::ptr::null_mut();
+        unsafe { Z3_optimize_assert_soft(self.ctx.z3_ctx,
+                                         self.z3_opt,
+                                         ast.z3_ast,
+                                         cstr_weight.as_ptr(),
+                                         symbol_ptr) };
     }
 
     /// Add a maximization constraint.
