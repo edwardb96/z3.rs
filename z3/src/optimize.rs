@@ -21,6 +21,17 @@ impl<'ctx> Optimize<'ctx> {
         }
     }
 
+    pub fn set_timeout(&self, timeout: u32) {
+        unsafe {
+            let guard = Z3_MUTEX.lock().unwrap();
+            let params = Z3_mk_params(self.ctx.z3_ctx);
+            let cstr_timeout = CString::new("timeout").unwrap();
+            let timeout_symbol = Z3_mk_string_symbol(self.ctx.z3_ctx, cstr_timeout.as_ptr());
+            Z3_params_set_uint(self.ctx.z3_ctx, params, timeout_symbol, timeout);
+            Z3_optimize_set_params(self.ctx.z3_ctx, self.z3_opt, params);
+        }
+    }
+
     /// Assert hard constraint to the optimization context.
     ///
     /// # See also:
