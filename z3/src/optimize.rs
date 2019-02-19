@@ -1,3 +1,4 @@
+use CheckResult;
 use std::ffi::{CStr, CString};
 use std::fmt;
 use z3_sys::*;
@@ -118,7 +119,29 @@ impl<'ctx> Optimize<'ctx> {
     /// - [`Optimize::get_model()`](#method.get_model)
     pub fn check(&self) -> bool {
         let guard = Z3_MUTEX.lock().unwrap();
-        unsafe { Z3_optimize_check(self.ctx.z3_ctx, self.z3_opt) == Z3_L_TRUE }
+        unsafe {
+            Z3_optimize_check(self.ctx.z3_ctx, self.z3_opt) == Z3_L_TRUE
+        }
+    }
+
+    /// Check consistency and produce optimal values.
+    /// returning models wrapped in `CheckResult`s if appropriate
+    ///
+    /// # See also:
+    ///
+    /// - [`Optimize::get_model()`](#method.get_model)
+    pub fn check_get_model(&self) -> CheckResult<'ctx> {
+        let lbool = unsafe {
+            let guard = Z3_MUTEX.lock().unwrap();
+            Z3_optimize_check(self.ctx.z3_ctx, self.z3_opt)
+        };
+
+        match lbool {
+            Z3_L_TRUE => CheckResult::Satisfiable(self.get_model()),
+            Z3_L_FALSE => CheckResult::Unsatisfiable,
+            Z3_L_UNDEF => CheckResult::Unknown(self.get_model()),
+            _ => panic!("Bad check result from z3 api!")
+        }
     }
 
     /// Retrieve the model for the last [`Optimize::check()`](#method.check)

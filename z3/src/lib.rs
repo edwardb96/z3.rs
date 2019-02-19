@@ -39,6 +39,12 @@ pub struct Context {
     z3_ctx: Z3_context,
 }
 
+pub enum CheckResult<'a> {
+    Satisfiable(Model<'a>),
+    Unknown(Model<'a>),
+    Unsatisfiable
+}
+
 /// Symbols are used to name several term and type constructors.
 ///
 /// # Creation:
